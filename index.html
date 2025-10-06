@@ -3,286 +3,131 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Serpent of Raiku</title>
+<title>RAIKU Snake</title>
+<link rel="icon" href="logo.png" />
 <style>
+  :root {
+    --bg: #0c0c0f;
+    --snake: #41ffca;
+    --food: #ff4545;
+  }
   body {
     margin: 0;
     overflow: hidden;
-    background-color: #000;
-    font-family: 'Orbitron', sans-serif;
-    color: #00ff66;
-  }
-
-  #gameContainer {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    gap: 20px;
-  }
-
-  canvas {
-    background: radial-gradient(circle at center, #001900, #000);
-    border: 2px solid #00ff66;
-    box-shadow: 0 0 30px #00ff66;
-  }
-
-  #controls {
+    background: var(--bg);
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 10px;
+    justify-content: center;
+    height: 100vh;
+    color: white;
+    font-family: 'Segoe UI', sans-serif;
   }
-
-  .btn {
-    background: #001900;
-    border: 1px solid #00ff66;
-    color: #00ff66;
-    padding: 10px 16px;
-    font-size: 18px;
-    border-radius: 8px;
-    cursor: pointer;
-    box-shadow: 0 0 10px #00ff66;
+  #gameCanvas {
+    border: 4px solid #41ffca;
+    background: rgba(0, 0, 0, 0.8);
+    box-shadow: 0 0 30px #41ffca;
+    border-radius: 10px;
   }
-  .btn:hover { background: #003300; }
-
-  #arrowControls {
-    display: grid;
-    grid-template-columns: repeat(3, 60px);
-    gap: 5px;
-  }
-
-  #arrowControls button {
-    background: #001900;
-    border: 1px solid #00ff66;
-    color: #00ff66;
-    padding: 10px;
-    border-radius: 8px;
-    font-size: 20px;
-    cursor: pointer;
-  }
-
-  #leaderboard {
-    color: #00ff66;
-    margin-top: 10px;
-    text-align: center;
-    font-size: 14px;
-  }
-
   #logo {
-    position: fixed;
-    top: 10px;
-    right: 10px;
-    width: 120px;
-    opacity: 0.9;
+    width: 140px;
+    margin-bottom: 15px;
+    filter: drop-shadow(0 0 10px #41ffca);
   }
-
-  #soundToggle {
-    position: fixed;
-    bottom: 10px;
-    right: 10px;
-    font-size: 16px;
-    background: #001900;
-    border: 1px solid #00ff66;
-    color: #00ff66;
-    padding: 6px 12px;
-    border-radius: 6px;
-    cursor: pointer;
+  #score {
+    font-size: 20px;
+    margin-bottom: 10px;
+    text-shadow: 0 0 8px #41ffca;
   }
 </style>
 </head>
 <body>
-  <img id="logo" src="logo.png" alt="Raiku Logo" />
-  <button id="soundToggle">🔈 Sound ON</button>
-  <div id="gameContainer">
-    <canvas id="gameCanvas" width="800" height="600"></canvas>
-    <div id="controls">
-      <button id="pauseBtn" class="btn">⏸ Pause</button>
-      <div id="arrowControls">
-        <div></div>
-        <button id="upBtn">⬆️</button>
-        <div></div>
-        <button id="leftBtn">⬅️</button>
-        <div></div>
-        <button id="rightBtn">➡️</button>
-        <div></div>
-        <button id="downBtn">⬇️</button>
-        <div></div>
-      </div>
-      <div id="leaderboard">
-        <h3>🏆 Leaderboard</h3>
-        <ol id="scoreList"></ol>
-      </div>
-    </div>
-  </div>
+  <img src="logo.png" id="logo" alt="RAIKU Logo" />
+  <div id="score">Score: 0</div>
+  <canvas id="gameCanvas" width="400" height="400"></canvas>
+  <audio id="bgMusic" src="https://files.catbox.moe/ekfhup.mp3" loop></audio>
 
 <script>
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
+const box = 20;
+let snake = [{ x: 9 * box, y: 10 * box }];
+let direction;
+let food = {
+  x: Math.floor(Math.random() * 19 + 1) * box,
+  y: Math.floor(Math.random() * 19 + 1) * box,
+};
+let score = 0;
 
 const headImg = new Image();
 headImg.src = "head.png";
+const bgMusic = document.getElementById("bgMusic");
 
-let gridSize = 20;
-let tileCountX = canvas.width / gridSize;
-let tileCountY = canvas.height / gridSize;
+// Mulai musik saat user interaksi pertama (karena autoplay dibatasi browser)
+document.body.addEventListener("click", () => bgMusic.play(), { once: true });
+document.body.addEventListener("keydown", () => bgMusic.play(), { once: true });
 
-let snake = [{x: 10, y: 10}];
-let vx = 1, vy = 0;
-let apple = {x: 15, y: 15, gold: false};
-let score = 0;
-let speed = 120;
-let gameLoop;
-let paused = false;
-let soundOn = true;
-let bgm;
-
-function playBgm() {
-  if (!bgm) {
-    bgm = new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_5b9389d41e.mp3?filename=epic-cinematic-trailer-111569.mp3");
-    bgm.loop = true;
-    bgm.volume = 0.4;
-  }
-  if (soundOn) bgm.play();
-  else bgm.pause();
+document.addEventListener("keydown", directionSet);
+function directionSet(event) {
+  if (event.keyCode == 37 && direction != "RIGHT") direction = "LEFT";
+  else if (event.keyCode == 38 && direction != "DOWN") direction = "UP";
+  else if (event.keyCode == 39 && direction != "LEFT") direction = "RIGHT";
+  else if (event.keyCode == 40 && direction != "UP") direction = "DOWN";
 }
 
-function toggleSound() {
-  soundOn = !soundOn;
-  document.getElementById("soundToggle").textContent = soundOn ? "🔈 Sound ON" : "🔇 Sound OFF";
-  playBgm();
-}
-
-function drawGame() {
-  if (paused) return;
-  updateSnake();
-  drawBackground();
-  drawApple();
-  drawSnake();
-  drawScore();
-}
-
-function drawBackground() {
-  ctx.fillStyle = "#000";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-}
-
-function drawSnake() {
-  snake.forEach((part, index) => {
-    if (index === 0) {
-      ctx.drawImage(headImg, part.x * gridSize, part.y * gridSize, gridSize, gridSize);
-    } else {
-      const glow = 0.5 + (index / snake.length) * 0.5;
-      ctx.fillStyle = `rgba(0,255,100,${glow})`;
-      ctx.fillRect(part.x * gridSize, part.y * gridSize, gridSize-2, gridSize-2);
-    }
-  });
-}
-
-function drawApple() {
-  ctx.fillStyle = apple.gold ? "#ffd700" : "#00ff66";
-  ctx.beginPath();
-  ctx.arc(apple.x * gridSize + gridSize/2, apple.y * gridSize + gridSize/2, gridSize/2.5, 0, Math.PI*2);
-  ctx.fill();
-}
-
-function drawScore() {
-  ctx.fillStyle = "#00ff66";
-  ctx.font = "18px Orbitron";
-  ctx.fillText("Score: " + score, 10, 20);
-}
-
-function updateSnake() {
-  const head = {x: snake[0].x + vx, y: snake[0].y + vy};
-  if (head.x < 0 || head.y < 0 || head.x >= tileCountX || head.y >= tileCountY || collision(head)) {
-    gameOver();
-    return;
+function draw() {
+  ctx.clearRect(0, 0, 400, 400);
+  for (let i = 0; i < snake.length; i++) {
+    ctx.fillStyle = i == 0 ? "#41ffca" : "#26cfa3";
+    ctx.fillRect(snake[i].x, snake[i].y, box, box);
   }
 
-  snake.unshift(head);
+  ctx.drawImage(headImg, snake[0].x - 2, snake[0].y - 2, box + 4, box + 4);
+  ctx.fillStyle = "#ff4545";
+  ctx.fillRect(food.x, food.y, box, box);
 
-  if (head.x === apple.x && head.y === apple.y) {
-    score += apple.gold ? 50 : 10;
-    if (score % 100 === 0 && speed > 60) {
-      clearInterval(gameLoop);
-      speed -= 10;
-      gameLoop = setInterval(drawGame, speed);
-    }
-    spawnApple();
+  let snakeX = snake[0].x;
+  let snakeY = snake[0].y;
+
+  if (direction == "LEFT") snakeX -= box;
+  if (direction == "UP") snakeY -= box;
+  if (direction == "RIGHT") snakeX += box;
+  if (direction == "DOWN") snakeY += box;
+
+  if (snakeX == food.x && snakeY == food.y) {
+    score++;
+    document.getElementById("score").innerHTML = "Score: " + score;
+    food = {
+      x: Math.floor(Math.random() * 19 + 1) * box,
+      y: Math.floor(Math.random() * 19 + 1) * box,
+    };
   } else {
     snake.pop();
   }
+
+  const newHead = { x: snakeX, y: snakeY };
+
+  if (
+    snakeX < 0 ||
+    snakeY < 0 ||
+    snakeX >= canvas.width ||
+    snakeY >= canvas.height ||
+    collision(newHead, snake)
+  ) {
+    clearInterval(game);
+    bgMusic.pause();
+    alert("Game Over! Your Score: " + score);
+    location.reload();
+  }
+
+  snake.unshift(newHead);
 }
 
-function collision(head) {
-  return snake.some((part, i) => i !== 0 && part.x === head.x && part.y === head.y);
+function collision(head, arr) {
+  return arr.some(segment => segment.x === head.x && segment.y === head.y);
 }
 
-function spawnApple() {
-  apple.x = Math.floor(Math.random() * tileCountX);
-  apple.y = Math.floor(Math.random() * tileCountY);
-  apple.gold = Math.random() < 0.1;
-}
-
-function gameOver() {
-  clearInterval(gameLoop);
-  playBgm();
-  const name = prompt("Game Over! Enter your name:");
-  if (name) saveScore(name, score);
-  loadLeaderboard();
-  resetGame();
-}
-
-function resetGame() {
-  snake = [{x: 10, y: 10}];
-  vx = 1; vy = 0;
-  score = 0;
-  speed = 120;
-  clearInterval(gameLoop);
-  gameLoop = setInterval(drawGame, speed);
-}
-
-function saveScore(name, score) {
-  const data = JSON.parse(localStorage.getItem("raikuLeaderboard") || "[]");
-  data.push({name, score});
-  data.sort((a,b) => b.score - a.score);
-  localStorage.setItem("raikuLeaderboard", JSON.stringify(data.slice(0,10)));
-}
-
-function loadLeaderboard() {
-  const data = JSON.parse(localStorage.getItem("raikuLeaderboard") || "[]");
-  const list = document.getElementById("scoreList");
-  list.innerHTML = "";
-  data.forEach((d) => {
-    const li = document.createElement("li");
-    li.textContent = `${d.name} - ${d.score}`;
-    list.appendChild(li);
-  });
-}
-
-document.addEventListener("keydown", (e) => {
-  if (e.key === "ArrowUp" && vy !== 1) {vx=0;vy=-1;}
-  if (e.key === "ArrowDown" && vy !== -1) {vx=0;vy=1;}
-  if (e.key === "ArrowLeft" && vx !== 1) {vx=-1;vy=0;}
-  if (e.key === "ArrowRight" && vx !== -1) {vx=1;vy=0;}
-  if (e.key === " ") togglePause();
-});
-
-document.getElementById("pauseBtn").addEventListener("click", togglePause);
-document.getElementById("soundToggle").addEventListener("click", toggleSound);
-document.getElementById("upBtn").onclick = () => { if (vy !== 1) {vx=0;vy=-1;} };
-document.getElementById("downBtn").onclick = () => { if (vy !== -1) {vx=0;vy=1;} };
-document.getElementById("leftBtn").onclick = () => { if (vx !== 1) {vx=-1;vy=0;} };
-document.getElementById("rightBtn").onclick = () => { if (vx !== -1) {vx=1;vy=0;} };
-
-function togglePause() {
-  paused = !paused;
-  document.getElementById("pauseBtn").textContent = paused ? "▶ Resume" : "⏸ Pause";
-}
-
-loadLeaderboard();
-playBgm();
-gameLoop = setInterval(drawGame, speed);
+let game = setInterval(draw, 120);
 </script>
 </body>
 </html>
