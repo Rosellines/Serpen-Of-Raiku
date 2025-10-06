@@ -1,265 +1,288 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Serpent of Raiku — Enhanced</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Serpent of Raiku</title>
 <style>
-  :root{--neon:#00ff80;--bg:#000;--panel:#041006}
-  html,body{height:100%;margin:0;background:#000;color:var(--neon);font-family:Inter, system-ui, monospace}
-  .wrap{display:flex;gap:16px;height:100vh;align-items:center;justify-content:center;padding:20px;box-sizing:border-box}
-  #gameArea{position:relative;background:radial-gradient(circle at 30% 20%, #001a00, #000);border:3px solid rgba(0,255,128,0.12);box-shadow:0 6px 40px rgba(0,255,128,0.03);}
-  canvas{display:block;background:linear-gradient(180deg,#00110000,#000);}
-  #uiPanel{width:320px;padding:14px;background:linear-gradient(180deg,rgba(0,0,0,0.35),rgba(0,0,0,0.15));border:1px solid rgba(0,255,128,0.06);backdrop-filter:blur(6px)}
-  .scoreRow{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-  #logo{position:fixed;top:12px;right:12px;width:72px;height:72px;image-rendering:pixelated}
-  .btn{display:inline-block;padding:8px 10px;border-radius:8px;border:1px solid rgba(0,255,128,0.12);background:rgba(0,0,0,0.4);color:var(--neon);cursor:pointer;margin:6px 4px}
-  .controls{display:grid;grid-template-columns:repeat(3,64px);gap:6px;justify-content:center}
-  .controls .btn{width:64px;height:64px;font-size:20px}
-  .leader{margin-top:12px;background:rgba(0,0,0,0.25);padding:8px;border-radius:8px;max-height:260px;overflow:auto}
-  .small{font-size:13px;color:rgba(0,255,128,0.8)}
-  .muted{color:rgba(0,255,128,0.3);font-size:13px}
+  body {
+    margin: 0;
+    overflow: hidden;
+    background-color: #000;
+    font-family: 'Orbitron', sans-serif;
+    color: #00ff66;
+  }
+
+  #gameContainer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    gap: 20px;
+  }
+
+  canvas {
+    background: radial-gradient(circle at center, #001900, #000);
+    border: 2px solid #00ff66;
+    box-shadow: 0 0 30px #00ff66;
+  }
+
+  #controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .btn {
+    background: #001900;
+    border: 1px solid #00ff66;
+    color: #00ff66;
+    padding: 10px 16px;
+    font-size: 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 0 10px #00ff66;
+  }
+  .btn:hover { background: #003300; }
+
+  #arrowControls {
+    display: grid;
+    grid-template-columns: repeat(3, 60px);
+    gap: 5px;
+  }
+
+  #arrowControls button {
+    background: #001900;
+    border: 1px solid #00ff66;
+    color: #00ff66;
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 20px;
+    cursor: pointer;
+  }
+
+  #leaderboard {
+    color: #00ff66;
+    margin-top: 10px;
+    text-align: center;
+    font-size: 14px;
+  }
+
+  #logo {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    width: 120px;
+    opacity: 0.9;
+  }
+
+  #soundToggle {
+    position: fixed;
+    bottom: 10px;
+    right: 10px;
+    font-size: 16px;
+    background: #001900;
+    border: 1px solid #00ff66;
+    color: #00ff66;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
 </style>
 </head>
 <body>
-<img id="logo" src="/mnt/data/logo.png" alt="logo">
-<div class="wrap">
-  <div id="gameArea">
+  <img id="logo" src="logo.png" alt="Raiku Logo" />
+  <button id="soundToggle">🔈 Sound ON</button>
+  <div id="gameContainer">
     <canvas id="gameCanvas" width="800" height="600"></canvas>
-  </div>
-  <div id="uiPanel">
-    <div class="scoreRow">
-      <div>Score: <span id="score">0</span></div>
-      <div>High: <span id="high">0</span></div>
-    </div>
-    <div class="scoreRow">
-      <div class="small">Speed: <span id="speedDisplay">Normal</span></div>
-      <div class="small">Orbs eaten: <span id="orbsCount">0</span></div>
-    </div>
-
-    <div style="text-align:center;margin:8px 0">
+    <div id="controls">
       <button id="pauseBtn" class="btn">⏸ Pause</button>
-      <button id="resetBtn" class="btn">🔁 Reset</button>
-      <button id="soundBtn" class="btn">🔈 Sound: ON</button>
-    </div>
-
-    <div style="margin-top:6px">
-      <div class="controls">
+      <div id="arrowControls">
         <div></div>
-        <button class="btn dir" data-dir="up">⬆</button>
+        <button id="upBtn">⬆️</button>
         <div></div>
-        <button class="btn dir" data-dir="left">⬅</button>
-        <div class="btn" style="background:transparent;border:none"></div>
-        <button class="btn dir" data-dir="right">➡</button>
+        <button id="leftBtn">⬅️</button>
         <div></div>
-        <button class="btn dir" data-dir="down">⬇</button>
+        <button id="rightBtn">➡️</button>
+        <div></div>
+        <button id="downBtn">⬇️</button>
         <div></div>
       </div>
-    </div>
-
-    <div class="leader">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <div><strong>Leaderboard</strong> <span class="muted">(Top 10)</span></div>
-        <button id="clearBoard" class="btn" style="padding:6px">Clear</button>
+      <div id="leaderboard">
+        <h3>🏆 Leaderboard</h3>
+        <ol id="scoreList"></ol>
       </div>
-      <ol id="leaderList" style="padding-left:18px;margin-top:8px"></ol>
     </div>
-
-    <div style="margin-top:10px" class="small muted">Tip: arrow keys or tap the control box. Space to Pause/Resume.</div>
   </div>
-</div>
 
 <script>
-// ====== Config ======
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
-const gridSize = 24; // cell size (smaller grid -> more room)
-const cols = Math.floor(canvas.width / gridSize);
-const rows = Math.floor(canvas.height / gridSize);
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
 
-// Images (user provided in container)
-const headImg = new Image(); headImg.src = '/mnt/data/head.png';
+const headImg = new Image();
+headImg.src = "head.png";
 
-// Audio
-const bgm = new Audio('https://cdn.pixabay.com/download/audio/2022/08/23/audio_9f3b1f5c7e.mp3?filename=dramatic-epic-cinematic-112451.mp3');
-bgm.loop = true; bgm.volume = 0.45;
-const sfxEat = new Audio('https://cdn.pixabay.com/audio/2022/03/15/audio_9c42f9d3b8.mp3');
-const sfxHit = new Audio('https://cdn.pixabay.com/audio/2022/03/15/audio_eb2b99a9e8.mp3');
-let soundOn = true;
+let gridSize = 20;
+let tileCountX = canvas.width / gridSize;
+let tileCountY = canvas.height / gridSize;
 
-// Game state
-let snake = [{x: Math.floor(cols/2), y: Math.floor(rows/2)}];
-let dir = {x:1,y:0};
-let nextDir = {x:1,y:0};
-let trail = []; // for smooth trail
+let snake = [{x: 10, y: 10}];
+let vx = 1, vy = 0;
+let apple = {x: 15, y: 15, gold: false};
 let score = 0;
-let high = parseInt(localStorage.getItem('raiku_high')||0,10);
-let orbsEaten = 0;
-let orb = spawnOrb();
-let goldOrb = null;
-let lastGold = Date.now();
+let speed = 120;
+let gameLoop;
 let paused = false;
-let running = true;
-let moveInterval = 140; // ms
-let lastMove = 0;
+let soundOn = true;
+let bgm;
 
-// Leaderboard
-const LB_KEY = 'raiku_leaderboard_v2';
-
-// UI refs
-const scoreEl = document.getElementById('score');
-const highEl = document.getElementById('high'); highEl.textContent = high;
-const speedDisplay = document.getElementById('speedDisplay');
-const orbsCount = document.getElementById('orbsCount');
-
-// Helpers
-function spawnOrb(){
-  return { x: Math.floor(Math.random()*cols), y: Math.floor(Math.random()*rows), value:10, color:'#00ff80' };
-}
-function spawnGold(){
-  return { x: Math.floor(Math.random()*cols), y: Math.floor(Math.random()*rows), value:50, color:'#ffd700' };
-}
-
-function resetGame(){
-  // save leaderboard if score>0
-  if(score>0){
-    const name = prompt('Game Over! Enter your name to save leaderboard:', 'Raiku');
-    if(name) saveLeaderboard(name, score);
+function playBgm() {
+  if (!bgm) {
+    bgm = new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_5b9389d41e.mp3?filename=epic-cinematic-trailer-111569.mp3");
+    bgm.loop = true;
+    bgm.volume = 0.4;
   }
-  if(score>high){ high=score; localStorage.setItem('raiku_high', high); highEl.textContent = high; }
-  score=0; orbsEaten=0; orb=spawnOrb(); goldOrb=null; lastGold = Date.now(); snake=[{x:Math.floor(cols/2), y:Math.floor(rows/2)}]; dir={x:1,y:0}; nextDir={x:1,y:0}; trail=[]; moveInterval=140; updateUI();
+  if (soundOn) bgm.play();
+  else bgm.pause();
 }
 
-function saveLeaderboard(name, score){
-  let board = JSON.parse(localStorage.getItem(LB_KEY)||'[]');
-  board.push({name,score,date:Date.now()});
-  board.sort((a,b)=>b.score-a.score);
-  board = board.slice(0,10);
-  localStorage.setItem(LB_KEY, JSON.stringify(board));
-  renderLeaderboard();
-}
-function renderLeaderboard(){
-  const list = document.getElementById('leaderList'); list.innerHTML='';
-  const board = JSON.parse(localStorage.getItem(LB_KEY)||'[]');
-  board.forEach((p,i)=>{ const li = document.createElement('li'); li.innerHTML = `<strong>${p.name}</strong> — ${p.score}`; list.appendChild(li); });
+function toggleSound() {
+  soundOn = !soundOn;
+  document.getElementById("soundToggle").textContent = soundOn ? "🔈 Sound ON" : "🔇 Sound OFF";
+  playBgm();
 }
 
-// Controls
-window.addEventListener('keydown', e=>{
-  if(e.code==='Space'){ paused=!paused; document.getElementById('pauseBtn').textContent = paused? '▶ Resume':'⏸ Pause'; }
-  if(e.key.startsWith('Arrow')){
-    if(e.key==='ArrowUp' && dir.y===0) nextDir={x:0,y:-1};
-    if(e.key==='ArrowDown' && dir.y===0) nextDir={x:0,y:1};
-    if(e.key==='ArrowLeft' && dir.x===0) nextDir={x:-1,y:0};
-    if(e.key==='ArrowRight' && dir.x===0) nextDir={x:1,y:0};
+function drawGame() {
+  if (paused) return;
+  updateSnake();
+  drawBackground();
+  drawApple();
+  drawSnake();
+  drawScore();
+}
+
+function drawBackground() {
+  ctx.fillStyle = "#000";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
+
+function drawSnake() {
+  snake.forEach((part, index) => {
+    if (index === 0) {
+      ctx.drawImage(headImg, part.x * gridSize, part.y * gridSize, gridSize, gridSize);
+    } else {
+      const glow = 0.5 + (index / snake.length) * 0.5;
+      ctx.fillStyle = `rgba(0,255,100,${glow})`;
+      ctx.fillRect(part.x * gridSize, part.y * gridSize, gridSize-2, gridSize-2);
+    }
+  });
+}
+
+function drawApple() {
+  ctx.fillStyle = apple.gold ? "#ffd700" : "#00ff66";
+  ctx.beginPath();
+  ctx.arc(apple.x * gridSize + gridSize/2, apple.y * gridSize + gridSize/2, gridSize/2.5, 0, Math.PI*2);
+  ctx.fill();
+}
+
+function drawScore() {
+  ctx.fillStyle = "#00ff66";
+  ctx.font = "18px Orbitron";
+  ctx.fillText("Score: " + score, 10, 20);
+}
+
+function updateSnake() {
+  const head = {x: snake[0].x + vx, y: snake[0].y + vy};
+  if (head.x < 0 || head.y < 0 || head.x >= tileCountX || head.y >= tileCountY || collision(head)) {
+    gameOver();
+    return;
   }
-});
 
-// Touch / swipe
-let tsx=0, tsy=0;
-canvas.addEventListener('touchstart', e=>{ const t=e.touches[0]; tsx=t.clientX; tsy=t.clientY; });
-canvas.addEventListener('touchend', e=>{ const t=e.changedTouches[0]; const dx=t.clientX-tsx, dy=t.clientY-tsy; if(Math.abs(dx)>Math.abs(dy)){ if(dx>20 && dir.x===0) nextDir={x:1,y:0}; if(dx<-20 && dir.x===0) nextDir={x:-1,y:0}; } else { if(dy>20 && dir.y===0) nextDir={x:0,y:1}; if(dy<-20 && dir.y===0) nextDir={x:0,y:-1}; } tsx=0; tsy=0; });
-
-// Buttons
-document.querySelectorAll('.dir').forEach(b=>b.addEventListener('click',()=>{
-  const d=b.dataset.dir; if(d==='up' && dir.y===0) nextDir={x:0,y:-1};
-  if(d==='down' && dir.y===0) nextDir={x:0,y:1};
-  if(d==='left' && dir.x===0) nextDir={x:-1,y:0};
-  if(d==='right' && dir.x===0) nextDir={x:1,y:0};
-}));
-
-document.getElementById('pauseBtn').addEventListener('click', ()=>{ paused=!paused; document.getElementById('pauseBtn').textContent = paused? '▶ Resume':'⏸ Pause'; });
-document.getElementById('resetBtn').addEventListener('click', ()=> resetGame());
-document.getElementById('soundBtn').addEventListener('click', ()=>{ soundOn=!soundOn; document.getElementById('soundBtn').textContent = soundOn? '🔈 Sound: ON':'🔇 Sound: OFF'; if(soundOn) bgm.play(); else bgm.pause(); });
-document.getElementById('clearBoard').addEventListener('click', ()=>{ if(confirm('Clear leaderboard?')){ localStorage.removeItem(LB_KEY); renderLeaderboard(); }});
-
-// Game logic
-function step(){
-  if(paused) return;
-  // update direction
-  dir = nextDir;
-  const head = {x: snake[0].x + dir.x, y: snake[0].y + dir.y};
-  // wall collision
-  if(head.x<0 || head.y<0 || head.x>=cols || head.y>=rows){ gameOver(); return; }
-  // self collision
-  for(let i=0;i<snake.length;i++){ if(snake[i].x===head.x && snake[i].y===head.y){ gameOver(); return; } }
   snake.unshift(head);
 
-  // eat orb
-  if(head.x===orb.x && head.y===orb.y){ score += orb.value; orbsEaten++; if(soundOn) sfxEat.play(); orb = spawnOrb(); }
-  else if(goldOrb && head.x===goldOrb.x && head.y===goldOrb.y){ score += goldOrb.value; orbsEaten++; if(soundOn) sfxEat.play(); goldOrb=null; }
-  else { snake.pop(); }
-
-  // spawn gold each 30s
-  if(Date.now()-lastGold>30000 && !goldOrb){ goldOrb=spawnGold(); lastGold=Date.now(); }
-
-  // speed up every 100 points
-  const speedLevel = Math.floor(score/100);
-  moveInterval = Math.max(40, 140 - speedLevel*20);
-  updateUI();
-}
-
-function gameOver(){ if(soundOn) sfxHit.play(); running=false; paused=true; document.getElementById('pauseBtn').textContent='▶ Resume'; setTimeout(()=>{ resetGame(); running=true; paused=false; document.getElementById('pauseBtn').textContent='⏸ Pause'; },300); }
-
-function updateUI(){ scoreEl.textContent = score; highEl.textContent = high; orbsCount.textContent = orbsEaten; speedDisplay.textContent = moveInterval<80? 'Fast' : moveInterval<120? 'Medium' : 'Normal'; }
-
-// Rendering with smooth trail and head image
-function render(){
-  // background
-  ctx.fillStyle = '#000'; ctx.fillRect(0,0,canvas.width,canvas.height);
-
-  // grid glow (subtle)
-  for(let i=0;i<cols;i++){ for(let j=0;j<rows;j++){ /* optional tiny effects */ } }
-
-  // draw orb
-  drawOrb(orb.color, orb.x, orb.y);
-  if(goldOrb) drawOrb(goldOrb.color, goldOrb.x, goldOrb.y, true);
-
-  // trail: push head center into trail, then draw fading circles
-  const headCenter = {x: snake[0].x*gridSize + gridSize/2, y: snake[0].y*gridSize + gridSize/2};
-  trail.unshift({...headCenter});
-  if(trail.length>snake.length*6) trail.pop();
-
-  // draw trail
-  for(let t=0;t<trail.length;t++){
-    const p = trail[t];
-    const alpha = 1 - t/trail.length;
-    const size = gridSize * (0.9 - t/trail.length*0.7);
-    const g = ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,size);
-    g.addColorStop(0, `rgba(0,255,128,${0.7*alpha})`);
-    g.addColorStop(1, `rgba(0,255,128,0)`);
-    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(p.x,p.y,size/2,0,Math.PI*2); ctx.fill();
+  if (head.x === apple.x && head.y === apple.y) {
+    score += apple.gold ? 50 : 10;
+    if (score % 100 === 0 && speed > 60) {
+      clearInterval(gameLoop);
+      speed -= 10;
+      gameLoop = setInterval(drawGame, speed);
+    }
+    spawnApple();
+  } else {
+    snake.pop();
   }
-
-  // draw body segments as tapered glows
-  for(let i=snake.length-1;i>=0;i--){ const s=snake[i]; const x=s.x*gridSize + gridSize/2; const y=s.y*gridSize + gridSize/2; const r = gridSize*0.45*(1 - i/snake.length*0.6); const alpha = 0.6*(1 - i/snake.length);
-    const g = ctx.createRadialGradient(x,y,0,x,y,r);
-    g.addColorStop(0, `rgba(0,255,128,${alpha})`); g.addColorStop(1, `rgba(0,255,128,0)`);
-    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill(); }
-
-  // draw head image rotated
-  const head = snake[0];
-  const hx = head.x*gridSize + gridSize/2, hy = head.y*gridSize + gridSize/2;
-  const angle = Math.atan2(dir.y, dir.x);
-  const size = gridSize*1.2;
-  ctx.save(); ctx.translate(hx,hy); ctx.rotate(angle);
-  if(headImg.complete){ ctx.drawImage(headImg, -size/2, -size/2, size, size); }
-  else { ctx.fillStyle='#00ff80'; ctx.beginPath(); ctx.arc(0,0,size/2,0,Math.PI*2); ctx.fill(); }
-  ctx.restore();
-
-  // small HUD
-  ctx.fillStyle='rgba(0,0,0,0.4)'; ctx.fillRect(6,6,180,34);
 }
 
-function drawOrb(color,x,y,isGold){ const cx = x*gridSize+gridSize/2, cy = y*gridSize+gridSize/2; ctx.beginPath(); ctx.fillStyle=color; ctx.arc(cx,cy,gridSize*0.4,0,Math.PI*2); ctx.fill(); if(isGold){ ctx.lineWidth=2; ctx.strokeStyle='rgba(255,215,0,0.6)'; ctx.stroke(); } }
+function collision(head) {
+  return snake.some((part, i) => i !== 0 && part.x === head.x && part.y === head.y);
+}
 
-// Main loop using time-based moves
-let lastTime=0; function loop(ts){ if(!lastTime) lastTime=ts; const elapsed = ts - lastTime; if(elapsed > moveInterval){ lastTime = ts; if(running && !paused) step(); } render(); requestAnimationFrame(loop); }
-requestAnimationFrame(loop);
+function spawnApple() {
+  apple.x = Math.floor(Math.random() * tileCountX);
+  apple.y = Math.floor(Math.random() * tileCountY);
+  apple.gold = Math.random() < 0.1;
+}
 
-// initial
-renderLeaderboard(); updateUI(); if(soundOn) bgm.play();
+function gameOver() {
+  clearInterval(gameLoop);
+  playBgm();
+  const name = prompt("Game Over! Enter your name:");
+  if (name) saveScore(name, score);
+  loadLeaderboard();
+  resetGame();
+}
 
+function resetGame() {
+  snake = [{x: 10, y: 10}];
+  vx = 1; vy = 0;
+  score = 0;
+  speed = 120;
+  clearInterval(gameLoop);
+  gameLoop = setInterval(drawGame, speed);
+}
+
+function saveScore(name, score) {
+  const data = JSON.parse(localStorage.getItem("raikuLeaderboard") || "[]");
+  data.push({name, score});
+  data.sort((a,b) => b.score - a.score);
+  localStorage.setItem("raikuLeaderboard", JSON.stringify(data.slice(0,10)));
+}
+
+function loadLeaderboard() {
+  const data = JSON.parse(localStorage.getItem("raikuLeaderboard") || "[]");
+  const list = document.getElementById("scoreList");
+  list.innerHTML = "";
+  data.forEach((d) => {
+    const li = document.createElement("li");
+    li.textContent = `${d.name} - ${d.score}`;
+    list.appendChild(li);
+  });
+}
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "ArrowUp" && vy !== 1) {vx=0;vy=-1;}
+  if (e.key === "ArrowDown" && vy !== -1) {vx=0;vy=1;}
+  if (e.key === "ArrowLeft" && vx !== 1) {vx=-1;vy=0;}
+  if (e.key === "ArrowRight" && vx !== -1) {vx=1;vy=0;}
+  if (e.key === " ") togglePause();
+});
+
+document.getElementById("pauseBtn").addEventListener("click", togglePause);
+document.getElementById("soundToggle").addEventListener("click", toggleSound);
+document.getElementById("upBtn").onclick = () => { if (vy !== 1) {vx=0;vy=-1;} };
+document.getElementById("downBtn").onclick = () => { if (vy !== -1) {vx=0;vy=1;} };
+document.getElementById("leftBtn").onclick = () => { if (vx !== 1) {vx=-1;vy=0;} };
+document.getElementById("rightBtn").onclick = () => { if (vx !== -1) {vx=1;vy=0;} };
+
+function togglePause() {
+  paused = !paused;
+  document.getElementById("pauseBtn").textContent = paused ? "▶ Resume" : "⏸ Pause";
+}
+
+loadLeaderboard();
+playBgm();
+gameLoop = setInterval(drawGame, speed);
 </script>
 </body>
 </html>
